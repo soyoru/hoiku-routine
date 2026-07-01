@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ならべよう ─ 保育園の 一日</title>
+<style>
+  :root{
+    --coral:#E76F51; --teal:#2A9D8F; --gold:#E9C46A; --dark:#264653;
+    --ink:#2B2D42; --mute:#6B7280; --cream:#FFF8F2; --line:#E5E7EB;
+    --coralT:#FCE9E3; --tealT:#E4F2EF; --goldT:#FBF1D9;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:"Hiragino Sans","Yu Gothic","Segoe UI",sans-serif;
+    background:var(--cream); color:var(--ink); padding:22px 16px 40px;
+  }
+  .wrap{max-width:1080px; margin:0 auto;}
+  header{text-align:center; margin-bottom:14px;}
+  h1{margin:0 0 6px; font-size:30px; color:var(--dark);}
+  .cando{
+    display:inline-block; background:var(--coral); color:#fff; font-weight:700;
+    padding:8px 18px; border-radius:999px; font-size:15px;
+  }
+  .instr{
+    background:var(--teal); color:#fff; border-radius:14px; padding:12px 18px;
+    font-size:18px; font-weight:700; margin:16px 0; text-align:center;
+    box-shadow:0 3px 8px rgba(0,0,0,.12);
+  }
+  .instr small{display:block; font-weight:400; font-size:14px; opacity:.9; margin-top:2px;}
+  .track-head{display:flex; justify-content:space-between; font-size:18px; font-weight:700; color:var(--mute); margin:6px 4px;}
+  .track{
+    display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+    background:#fff; border:2px dashed var(--line); border-radius:18px;
+    padding:16px 12px; min-height:210px;
+  }
+  .card{
+    width:150px; background:var(--goldT); border:1.5px solid var(--gold);
+    border-radius:16px; padding:10px 8px 8px; text-align:center; cursor:grab;
+    box-shadow:0 3px 7px rgba(0,0,0,.10); user-select:none; position:relative;
+    transition:transform .08s;
+  }
+  .card:nth-child(3n+1){background:var(--coralT); border-color:var(--coral);}
+  .card:nth-child(3n+2){background:var(--tealT); border-color:var(--teal);}
+  .card.dragging{opacity:.4;}
+  .card.over{transform:scale(1.04);}
+  .num{
+    position:absolute; top:-11px; left:-11px; width:30px; height:30px; border-radius:50%;
+    background:var(--dark); color:#fff; font-weight:700; font-size:15px;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,.2);
+  }
+  .emoji{font-size:52px; line-height:1.1;}
+  .jp{font-size:21px; font-weight:700; margin-top:2px;}
+  .romaji{font-size:12px; color:var(--mute); font-style:italic;}
+  .movebtns{display:flex; justify-content:center; gap:22px; margin-top:6px;}
+  .movebtns button{
+    border:none; background:var(--dark); color:#fff; width:30px; height:30px;
+    border-radius:50%; font-size:16px; cursor:pointer; line-height:1;
+  }
+  .movebtns button:hover{background:var(--coral);}
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:18px 0 6px;}
+  .toolbar button{
+    border:none; border-radius:12px; padding:11px 18px; font-size:15px; font-weight:700;
+    cursor:pointer; color:#fff; box-shadow:0 2px 5px rgba(0,0,0,.12);
+  }
+  .b-shuffle{background:var(--gold); color:var(--ink);}
+  .b-reset{background:var(--mute);}
+  .b-model{background:var(--teal);}
+  .b-share{background:var(--coral);}
+  .toolbar button:active{transform:translateY(1px);}
+  .say{
+    background:var(--goldT); border:1.5px solid var(--gold); border-radius:14px;
+    padding:12px 16px; font-size:18px; margin-top:16px; text-align:center;
+  }
+  .say b{color:var(--coral);}
+  .notice{
+    margin-top:16px; background:var(--dark); color:#fff; border-radius:16px;
+    padding:16px 20px; text-align:center;
+  }
+  .notice .big{font-size:22px; font-weight:700;}
+  .notice .sub{font-size:15px; opacity:.85; margin-top:4px;}
+  #toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+    background:var(--dark); color:#fff; padding:12px 22px; border-radius:999px;
+    font-size:15px; opacity:0; transition:opacity .25s; pointer-events:none;
+  }
+  #toast.show{opacity:1;}
+  .hint{text-align:center; color:var(--mute); font-size:13px; margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌤️ ならべよう ─ 保育園の 一日</h1>
+    <div class="cando">🎯 一日の ながれを、じかんの じゅんに ならべて いえる</div>
+  </header>
+
+  <div class="instr">
+    ▶ Put the cards in order.　Morning → Evening.
+    <small>カードを ドラッグ、または ◀ ▶ ボタンで うごかしてください</small>
+  </div>
+
+  <div class="track-head"><span>🌅 あさ</span><span>よる 🌙</span></div>
+  <div class="track" id="track"></div>
+
+  <div class="toolbar">
+    <button class="b-shuffle" onclick="shuffle()">🔀 シャッフル</button>
+    <button class="b-model" onclick="toggleRomaji()" id="romajiBtn">🔤 よみかたを みる</button>
+    <button class="b-share" onclick="shareLink()">🔗 リンクを コピー</button>
+  </div>
+  <div class="hint">「リンクを コピー」で、いまの ならびを Zoomの チャットに はれます（みんなで 見られます）。</div>
+
+  <div class="say">はなして みよう：　<b>あさ、〇〇。　それから、〇〇。</b></div>
+
+  <div class="notice">
+    <div class="big">💡 あなたの ほいくえんと おなじ？　ちがう？</div>
+    <div class="sub">Same as your nursery? Or different? ─ じゅんばんは 園に よって ちがいます。</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const CARDS = {
+    asobi:   {emoji:"🧸", jp:"あそび",  romaji:"asobi (play)"},
+    sanpo:   {emoji:"🚶", jp:"おさんぽ", romaji:"osanpo (walk)"},
+    gohan:   {emoji:"🍚", jp:"給食",     romaji:"kyūshoku (lunch)"},
+    hirune:  {emoji:"😴", jp:"おひるね", romaji:"ohirune (nap)"},
+    oyatsu:  {emoji:"🍪", jp:"おやつ",   romaji:"oyatsu (snack)"},
+    omukae:  {emoji:"🤗", jp:"おむかえ", romaji:"omukae (pick-up)"},
+  };
+  const MODEL = ["asobi","sanpo","gohan","hirune","oyatsu","omukae"]; // ならびの もと
+  let order = MODEL.slice();
+  let showRomaji = false;
+
+  const track = document.getElementById("track");
+
+  function render(){
+    track.innerHTML = "";
+    order.forEach((id, i) => {
+      const c = CARDS[id];
+      const el = document.createElement("div");
+      el.className = "card";
+      el.draggable = true;
+      el.dataset.id = id;
+      el.innerHTML = `
+        <div class="num">${i+1}</div>
+        <div class="emoji">${c.emoji}</div>
+        <div class="jp">${c.jp}</div>
+        <div class="romaji">${showRomaji ? c.romaji : "&nbsp;"}</div>
+        <div class="movebtns">
+          <button title="ひだりへ" onclick="move(${i},-1)">◀</button>
+          <button title="みぎへ" onclick="move(${i},1)">▶</button>
+        </div>`;
+      addDrag(el);
+      track.appendChild(el);
+    });
+    updateHash();
+  }
+
+  function move(i, dir){
+    const j = i + dir;
+    if(j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]];
+    render();
+  }
+
+  // --- drag & drop (desktop) ---
+  let dragId = null;
+  function addDrag(el){
+    el.addEventListener("dragstart", e => { dragId = el.dataset.id; el.classList.add("dragging"); });
+    el.addEventListener("dragend",   e => { dragId = null; el.classList.remove("dragging"); document.querySelectorAll(".card").forEach(c=>c.classList.remove("over")); });
+    el.addEventListener("dragover",  e => { e.preventDefault(); el.classList.add("over"); });
+    el.addEventListener("dragleave", e => { el.classList.remove("over"); });
+    el.addEventListener("drop", e => {
+      e.preventDefault(); el.classList.remove("over");
+      const targetId = el.dataset.id;
+      if(!dragId || dragId === targetId) return;
+      const from = order.indexOf(dragId), to = order.indexOf(targetId);
+      order.splice(from, 1);
+      order.splice(to, 0, dragId);
+      render();
+    });
+  }
+
+  function shuffle(){
+    for(let i = order.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    render();
+  }
+  function toggleRomaji(){ showRomaji = !showRomaji; syncRomajiBtn(); render(); }
+  function syncRomajiBtn(){ document.getElementById("romajiBtn").textContent = showRomaji ? "🔤 よみかたを かくす" : "🔤 よみかたを みる"; }
+
+  function updateHash(){ location.hash = "o=" + order.join(","); }
+  function shareLink(){
+    const url = location.href;
+    navigator.clipboard.writeText(url).then(
+      () => toast("🔗 リンクを コピーしました！ Zoomの チャットに はってください"),
+      () => toast("コピーできません。URLを 手で コピーしてください")
+    );
+  }
+  function loadHash(){
+    const m = location.hash.match(/o=([a-z,]+)/i);
+    if(!m) return false;
+    const ids = m[1].split(",");
+    if(ids.length === MODEL.length && ids.every(id => CARDS[id])){ order = ids; return true; }
+    return false;
+  }
+
+  let toastTimer;
+  function toast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+  }
+
+  // 共有リンクで開いたら その並び、そうでなければ シャッフルして スタート
+  if(!loadHash()) shuffle(); else render();
+</script>
+</body>
+</html>
